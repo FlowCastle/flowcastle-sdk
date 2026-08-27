@@ -109,9 +109,9 @@ idempotent server-side by `(botId, update_id)`.
 
 ## 5. Privacy and data boundary
 
-Each adapter sanitizes before manifest matching, buffering, outage spooling,
-event ingest, or `runFlow`. The sanitized representation is used consistently;
-the native framework update is never mutated.
+Each adapter sanitizes before manifest matching, background buffering, event
+ingest, or `runFlow`. The sanitized representation is used consistently; the
+native framework update is never mutated.
 
 The shared privacy contract has the same public meanings in every adapter:
 
@@ -125,9 +125,17 @@ The shared privacy contract has the same public meanings in every adapter:
 
 Application-authored values passed to goals, identify, live-agent notes, or
 explicit flow inputs are outside automatic Telegram sanitization. Adapter README
-files must document that distinction. Outage spools are bounded (reference:
-1,000 events / five minutes) and report drops without throwing into customer
-handler execution.
+files must document that distinction. Observation transports use a bounded
+500-event in-memory queue, batch network delivery outside unmatched customer
+handlers, drop oldest when full, and report delivery failures without throwing
+into customer handler execution.
+
+Matched updates are the deliberate exception: once a manifest or active claim
+assigns ownership to FlowCastle, the adapter awaits ingest before consuming the
+update. A failed hand-off is retained in a separate bounded runtime outage spool
+for replay and never falls through to customer handlers. Explicit `runFlow`
+calls also await server acceptance. Async privacy transformers remain on the
+local hot path because raw content must not race past redaction.
 
 ## 6. Package and repository layout
 
@@ -229,7 +237,7 @@ by `pnpm sdk:e2e`.
 | 0. Contract baseline | Done / maintained | `sdk-runtime` protocol primitives, privacy contract, capabilities, claims, client/spool, and versioned shared fixtures |
 | 1. grammY proxy runtime | Implemented; release hardening remains | Server proxy runtime, manifest/claims endpoints, identity binding, typed jobs, attribution, conformance, and hermetic dispatcher tests |
 | 2. Telegraf adapter | Implemented baseline | Thin Node adapter, shared protocol semantics, capability-gated dispatcher, privacy, and hermetic dispatcher tests |
-| 3. Python runtime + aiogram | Implemented baseline | Python protocol mirror, continuous sync/jobs/heartbeat, privacy/spool, aiogram adapter, shared fixtures, and framework tests |
+| 3. Python runtime + aiogram | Implemented baseline | Python protocol mirror, continuous sync/jobs/heartbeat, privacy, bounded background event transport, aiogram adapter, shared fixtures, and framework tests |
 | 4. python-telegram-bot | Implemented baseline | Early handler integration, shared Python runtime, file decoding, shared fixtures, and real `Application` dispatcher tests |
 | 5. Broad method surface and real-Telegram CI | Planned | Finish gated method families across targets and add credentialed smoke jobs |
 | 6. General availability | Planned | Version/support policy, operational dashboards, upgrade guidance, and acceptance criteria satisfied for each supported target |
@@ -246,6 +254,9 @@ For each adapter release:
   response is sent by the customer's framework-owned Telegram client.
 - An unmatched update reaches customer code exactly according to documented
   middleware placement; an adapter failure cannot throw into that chain.
+- Observation networking for unmatched updates and telemetry helpers runs in a
+  bounded background transport; a slow `/events` endpoint cannot delay customer
+  code. Local privacy work and matched-flow ownership remain explicit exceptions.
 - A current claim consumes a reply even if the manifest no longer matches; an
   expired or superseded claim does not.
 - Privacy filtering occurs before every adapter-owned persistence/network path,
@@ -276,8 +287,8 @@ an arbitrary client attribute, or opens a server-supplied filesystem path.
 Cache and outage behavior is fail-safe for ownership: without a manifest the
 adapter does not newly claim updates; once it has claimed an update it does not
 fall through to customer handlers during a transient server outage. The bounded
-spool, lease expiry, duplicate-event key, and health telemetry make this behavior
-observable without risking duplicate customer replies.
+observation queue, lease expiry, duplicate-event key, and health telemetry make
+this behavior observable without risking duplicate customer replies.
 
 ## 12. Versioning and compatibility
 
@@ -307,8 +318,8 @@ this recipe:
 3. Install middleware/handlers with documented order and modes; sanitize first,
    apply claims then manifest, ingest matched updates, and preserve unmatched
    handler behavior.
-4. Implement heartbeat, manifest/claim refresh, bounded outage spool, explicit
-   `runFlow`, and capability negotiation.
+4. Implement heartbeat, manifest/claim refresh, bounded background observation
+   delivery, explicit `runFlow`, and capability negotiation.
 5. Implement a typed, hardcoded Telegram dispatcher for the initial approved
    method set, job correlation, file-marker decoding, FIFO, and ack mapping.
 6. Pass every language-neutral conformance fixture, add framework-native unit

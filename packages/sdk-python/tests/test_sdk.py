@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import json
 from pathlib import Path
-import time
 from typing import Mapping
 
 import pytest
@@ -34,6 +33,42 @@ class FakeHttp:
         if url.endswith('/runtime-runs'):
             return 202, {}, {'executionId': 'run-1', 'acceptedAt': 1}
         return 202, {}, {'ok': True}
+
+
+class BlockingEventHttp(FakeHttp):
+    def __init__(self) -> None:
+        super().__init__()
+        self.release_events = asyncio.Event()
+        self.events_started = asyncio.Event()
+        self.active_event_requests = 0
+        self.max_active_event_requests = 0
+
+    async def request(self, method: str, url: str, headers: Mapping[str, str], body: JsonObject | None = None) -> tuple[int, Mapping[str, str], JsonObject]:
+        if url.endswith('/events'):
+            self.active_event_requests += 1
+            self.max_active_event_requests = max(self.max_active_event_requests, self.active_event_requests)
+            try:
+                self.events_started.set()
+                await self.release_events.wait()
+                return await super().request(method, url, headers, body)
+            finally:
+                self.active_event_requests -= 1
+        return await super().request(method, url, headers, body)
+
+
+class SequencedEventHttp(FakeHttp):
+    def __init__(self, statuses: list[int | Exception]) -> None:
+        super().__init__()
+        self.statuses = statuses
+
+    async def request(self, method: str, url: str, headers: Mapping[str, str], body: JsonObject | None = None) -> tuple[int, Mapping[str, str], JsonObject]:
+        if url.endswith('/events') and self.statuses:
+            self.calls.append((method, url, body))
+            result = self.statuses.pop(0)
+            if isinstance(result, Exception):
+                raise result
+            return result, {}, {'ok': 200 <= result < 300}
+        return await super().request(method, url, headers, body)
 
 
 class FakeUpdate:
@@ -71,6 +106,31 @@ class FakeMediaBot:
 
 def update(text: str, user: int = 7) -> JsonObject:
     return {'update_id': 1, 'message': {'message_id': 2, 'date': 1, 'text': text, 'chat': {'id': 4, 'type': 'private'}, 'from': {'id': user, 'is_bot': False, 'first_name': 'Private', 'username': 'private'}}}
+
+
+async def test_unmatched_update_does_not_wait_for_slow_event_ingest() -> None:
+    # Arrange
+    http = BlockingEventHttp()
+    core = FlowCastleCore(FlowCastleOptions('key'), http)
+    adapter = AiogramAdapter(core)
+    called: list[str] = []
+
+    async def customer(_update: object, _context: object) -> None:
+        called.append('customer')
+
+    # Act
+    handling = asyncio.create_task(adapter.handle_update(FakeUpdate(update('plain')), customer))
+    try:
+        await asyncio.wait_for(asyncio.shield(handling), 0.05)
+    finally:
+        http.release_events.set()
+        await handling
+
+    await core.flush_events()
+
+    # Assert
+    assert called == ['customer']
+    assert any(url.endswith('/events') for _method, url, _body in http.calls)
 
 
 @pytest.mark.parametrize('adapter_type', [AiogramAdapter, PythonTelegramBotAdapter])
@@ -117,13 +177,15 @@ async def test_privacy_transform_fail_closed_and_context_events() -> None:
     await context.identify({'tier': 'free'})  # type: ignore[attr-defined]
     await context.request_live_agent('n' * 600)  # type: ignore[attr-defined]
     result = await context.run_flow('manual')  # type: ignore[attr-defined]
+    await core.flush_events()
 
     # Assert
-    update_event = next(body['events'][0] for method, url, body in http.calls if url.endswith('/events') and body and body['events'][0]['type'] == 'update')
+    events = [event for _method, url, body in http.calls if url.endswith('/events') and body for event in body['events']]
+    update_event = next(event for event in events if event['type'] == 'update')
     assert 'text' not in update_event['update']['message']
     assert errors
     assert result['executionId'] == 'run-1'
-    live = next(body['events'][0] for method, url, body in http.calls if url.endswith('/events') and body and body['events'][0]['type'] == 'live_agent_request')
+    live = next(event for event in events if event['type'] == 'live_agent_request')
     assert len(live['note']) == 500
 
 
@@ -132,6 +194,7 @@ async def test_empty_privacy_mapping_uses_documented_privacy_first_defaults() ->
     core = FlowCastleCore(FlowCastleOptions('key', privacy={}), http)
 
     await core.process(update('/help secret'))
+    await core.flush_events()
 
     body = next(body for _method, url, body in http.calls if url.endswith('/events'))
     message = body['events'][0]['update']['message']
@@ -181,7 +244,7 @@ async def test_protocol_v2_job_without_a_lease_is_ignored_before_dispatch() -> N
     assert not any(url.endswith('/jobs/ack') for _method, url, _body in http.calls)
 
 
-async def test_matched_update_is_spooled_and_replayed_after_an_outage() -> None:
+async def test_failed_matched_update_is_retried_by_background_transport() -> None:
     # Arrange
     http = FakeHttp()
     http.fail_events = True
@@ -191,7 +254,7 @@ async def test_matched_update_is_spooled_and_replayed_after_an_outage() -> None:
     # Act
     matched, _context = await core.process(update('/start'))
     http.fail_events = False
-    await core.flush_spool()
+    await core.flush_runtime_spool()
 
     # Assert
     delivered = [body for method, url, body in http.calls if url.endswith('/events') and body]
@@ -201,16 +264,198 @@ async def test_matched_update_is_spooled_and_replayed_after_an_outage() -> None:
     assert delivered[1]['events'][0]['handled'] is True
 
 
-async def test_outage_spool_drops_events_after_the_five_minute_boundary() -> None:
+async def test_context_telemetry_is_fire_and_forget() -> None:
+    # Arrange
+    http = BlockingEventHttp()
+    core = FlowCastleCore(FlowCastleOptions('key'), http)
+    _handled, context = await core.process(update('plain'))
+    assert context is not None
+
+    # Act
+    await asyncio.wait_for(context.goal('signup'), 0.05)
+    await asyncio.wait_for(context.identify({'tier': 'free'}), 0.05)
+    await asyncio.wait_for(context.request_live_agent('n' * 600), 0.05)
+    http.release_events.set()
+    await core.flush_events()
+
+    # Assert
+    events = [event for _method, url, body in http.calls if url.endswith('/events') and body for event in body['events']]
+    assert [event['type'] for event in events] == ['update', 'goal', 'identify', 'live_agent_request']
+    assert len(events[-1]['note']) == 500
+
+
+async def test_background_transport_batches_and_caps_requests_at_fifty_events() -> None:
+    # Arrange
+    http = FakeHttp()
+    core = FlowCastleCore(FlowCastleOptions('key'), http)
+
+    # Act
+    for index in range(51):
+        core.enqueue_event({'type': 'goal', 'key': str(index)})
+    await core.flush_events()
+
+    # Assert
+    batches = [body['events'] for _method, url, body in http.calls if url.endswith('/events') and body]
+    assert [len(batch) for batch in batches] == [50, 1]
+    assert [event['key'] for batch in batches for event in batch] == [str(index) for index in range(51)]
+
+
+async def test_background_transport_drops_oldest_event_at_capacity() -> None:
+    # Arrange
     errors: list[Exception] = []
     http = FakeHttp()
     core = FlowCastleCore(FlowCastleOptions('key', on_error=errors.append), http)
-    core._spool.append((time.monotonic() - 301, {'type': 'goal', 'key': 'expired'}))
 
-    await core.flush_spool()
+    # Act
+    for index in range(501):
+        core.enqueue_event({'type': 'goal', 'key': str(index)})
+    await core.flush_events()
 
-    assert not any(url.endswith('/events') for _method, url, _body in http.calls)
-    assert any('expired runtime event' in str(error) for error in errors)
+    # Assert
+    events = [event for _method, url, body in http.calls if url.endswith('/events') and body for event in body['events']]
+    assert len(events) == 500
+    assert events[0]['key'] == '1'
+    assert events[-1]['key'] == '500'
+    assert any('dropped 1 buffered event' in str(error) for error in errors)
+
+
+@pytest.mark.parametrize('first_failure', [OSError('offline'), 503])
+async def test_background_transport_retries_one_transient_failure(first_failure: int | Exception) -> None:
+    # Arrange
+    http = SequencedEventHttp([first_failure, 202])
+    core = FlowCastleCore(FlowCastleOptions('key'), http)
+    core.enqueue_event({'type': 'goal', 'key': 'retry'})
+
+    # Act
+    await core.flush_events()
+
+    # Assert
+    calls = [body for _method, url, body in http.calls if url.endswith('/events')]
+    assert len(calls) == 2
+    assert calls[0] == calls[1]
+
+
+async def test_background_transport_drops_after_two_transient_failures() -> None:
+    # Arrange
+    errors: list[Exception] = []
+    http = SequencedEventHttp([503, 503, 202])
+    core = FlowCastleCore(FlowCastleOptions('key', on_error=errors.append), http)
+    core.enqueue_event({'type': 'goal', 'key': 'drop-after-retry'})
+
+    # Act
+    await core.flush_events()
+    await core.flush_events()
+
+    # Assert
+    assert len([url for _method, url, _body in http.calls if url.endswith('/events')]) == 2
+    assert any('ingest failed (503), dropping batch' in str(error) for error in errors)
+
+
+async def test_background_transport_drops_non_retryable_response() -> None:
+    # Arrange
+    errors: list[Exception] = []
+    http = SequencedEventHttp([401, 202])
+    core = FlowCastleCore(FlowCastleOptions('key', on_error=errors.append), http)
+    core.enqueue_event({'type': 'goal', 'key': 'unauthorized'})
+
+    # Act
+    await core.flush_events()
+
+    # Assert
+    assert len([url for _method, url, _body in http.calls if url.endswith('/events')]) == 1
+    assert any('rejected api_key (401)' in str(error) for error in errors)
+
+
+async def test_background_transport_silently_drops_other_client_errors_like_node() -> None:
+    # Arrange
+    errors: list[Exception] = []
+    http = SequencedEventHttp([422, 202])
+    core = FlowCastleCore(FlowCastleOptions('key', on_error=errors.append), http)
+    core.enqueue_event({'type': 'goal', 'key': 'invalid'})
+
+    # Act
+    await core.flush_events()
+
+    # Assert
+    assert len([url for _method, url, _body in http.calls if url.endswith('/events')]) == 1
+    assert errors == []
+
+
+async def test_background_transport_serializes_flushes_while_events_arrive() -> None:
+    # Arrange
+    http = BlockingEventHttp()
+    core = FlowCastleCore(FlowCastleOptions('key'), http)
+    for index in range(20):
+        core.enqueue_event({'type': 'goal', 'key': str(index)})
+    await asyncio.wait_for(http.events_started.wait(), 0.1)
+
+    # Act
+    core.enqueue_event({'type': 'goal', 'key': '20'})
+    flushing = asyncio.create_task(core.flush_events())
+    http.release_events.set()
+    await flushing
+
+    # Assert
+    events = [event for _method, url, body in http.calls if url.endswith('/events') and body for event in body['events']]
+    assert http.max_active_event_requests == 1
+    assert [event['key'] for event in events] == [str(index) for index in range(21)]
+
+
+async def test_matched_update_still_awaits_required_ingest() -> None:
+    # Arrange
+    http = BlockingEventHttp()
+    core = FlowCastleCore(FlowCastleOptions('key', runtime_enabled=True), http)
+    adapter = AiogramAdapter(core)
+    called: list[str] = []
+    await adapter.ready()
+
+    async def customer(_update: object, _context: object) -> None:
+        called.append('customer')
+
+    # Act
+    handling = asyncio.create_task(adapter.handle_update(FakeUpdate(update('/start')), customer))
+    await asyncio.wait_for(http.events_started.wait(), 0.1)
+
+    # Assert
+    assert not handling.done()
+    assert called == []
+
+    http.release_events.set()
+    assert await handling
+    await core.stop()
+
+
+async def test_stop_flushes_observed_events_below_the_eager_threshold() -> None:
+    # Arrange
+    http = FakeHttp()
+    core = FlowCastleCore(FlowCastleOptions('key'), http)
+    await core.process(update('plain'))
+
+    # Act
+    await core.stop()
+
+    # Assert
+    events = [event for _method, url, body in http.calls if url.endswith('/events') and body for event in body['events']]
+    assert [event['type'] for event in events] == ['update']
+
+
+async def test_stop_bounds_slow_shutdown_flush() -> None:
+    # Arrange
+    errors: list[Exception] = []
+    http = BlockingEventHttp()
+    core = FlowCastleCore(FlowCastleOptions('key', on_error=errors.append, shutdown_flush_timeout_ms=10), http)
+    await core.process(update('plain'))
+
+    # Act
+    await asyncio.wait_for(core.stop(), 0.1)
+    http.release_events.set()
+    await core.start(FakeBot())
+    await core.flush_events()
+
+    # Assert
+    assert any('timed out flushing events during shutdown' in str(error) for error in errors)
+    events = [event for _method, url, body in http.calls if url.endswith('/events') and body for event in body['events']]
+    assert [event['type'] for event in events] == ['update']
 
 
 async def test_started_runtime_refreshes_and_delivers_jobs_in_the_background() -> None:

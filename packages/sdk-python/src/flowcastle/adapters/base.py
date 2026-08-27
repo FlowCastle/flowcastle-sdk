@@ -43,6 +43,10 @@ class TelegramAdapter:
     async def stop(self) -> None:
         await self.core.stop()
 
+    async def flush(self) -> None:
+        """Deliver buffered observation events without stopping the adapter."""
+        await self.core.flush_events()
+
     async def handle_update(self, update: object, next_handler: NextHandler) -> bool:
         """Consume proxy-owned updates; call customer code only for unmatched updates."""
         handled, context = await self.core.process(update_to_json(update), self.identity)

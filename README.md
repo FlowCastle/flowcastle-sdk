@@ -195,6 +195,38 @@ jobs, and acknowledgements remain consistent. That makes support for another
 Telegram library—or another language—a small adapter project instead of a new
 platform integration.
 
+## Performance contract
+
+FlowCastle network delivery stays outside the execution path of ordinary
+commands, callbacks, and unmatched updates in **Node.js and Python**. After
+local privacy filtering and trigger matching, the adapter places observation
+events in a bounded in-memory queue and immediately continues to your existing
+handler. Goals, identification, and Live Chat requests use the same
+fire-and-forget transport.
+
+Observation events flush every three seconds or at 20 queued events, with no
+more than 50 events in one request. The queue holds at most 500 events and drops
+the oldest under sustained pressure instead of growing without limit. Network
+and 5xx failures receive one background retry and never throw into customer
+handlers.
+
+This is deliberately described as **network fire-and-forget**, not zero
+overhead. Cloning, privacy filtering, and local manifest matching still use a
+small amount of CPU. An async `transformText` callback is awaited because raw
+content must never race past redaction. Two server operations are also
+intentionally awaited:
+
+- An update matched by a FlowCastle trigger or active conversation claim,
+  because FlowCastle owns the response and customer handlers must not also run.
+  Failed hand-offs enter a separate bounded runtime outage spool for replay
+  instead of falling through and risking a duplicate reply.
+- An explicit `runFlow` / `run_flow` call, because it returns the accepted flow
+  execution id.
+
+Both boundaries are covered by regression tests with a deliberately blocked
+`/events` endpoint: unmatched customer handlers finish first, while matched
+flow updates remain pending until ownership is accepted.
+
 ## What your team gets
 
 <table>
@@ -230,7 +262,7 @@ product is built.
 
 Trust should come from enforceable boundaries, not a promise on a landing page.
 The SDK filters Telegram data **inside your bot process**, before an event can
-enter its buffer, temporary outage spool, or a FlowCastle network request.
+enter its bounded in-memory buffer or a FlowCastle network request.
 
 - **Your Telegram bot token stays with your application.** You do not pass it to
   FlowCastle, and the SDK does not take over polling, webhooks, or shutdown.

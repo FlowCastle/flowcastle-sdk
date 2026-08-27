@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Literal, Mapping, Protocol
 
 from .privacy import PrivacyFilter, PrivacyOptions
+from .transport import EventTransport
 from .types import ConversationClaim, JobAck, JsonObject, RuntimeJob, RuntimeManifest, RuntimeRule, RuntimeUpdate, object_value
 
 TELEGRAM_OPERATION_METHODS = {
@@ -39,8 +40,8 @@ TELEGRAM_OPERATION_METHODS = {
 SAFE_TELEGRAM_OPERATIONS = frozenset(TELEGRAM_OPERATION_METHODS)
 REFUSED_LIFECYCLE_OPERATIONS = frozenset({'getUpdates', 'setWebhook', 'deleteWebhook', 'close', 'logOut'})
 FileDecoder = Callable[[bytes, str, str | None], object]
-SPOOL_MAX_ITEMS = 1000
-SPOOL_MAX_AGE_SECONDS = 5 * 60
+RUNTIME_SPOOL_MAX_ITEMS = 1000
+RUNTIME_SPOOL_MAX_AGE_SECONDS = 5 * 60
 
 
 class AsyncHttpClient(Protocol):
@@ -79,6 +80,9 @@ class FlowCastleOptions:
     on_error: Callable[[Exception], None] | None = None
     library_name: str = 'flowcastle-python'
     library_version: str = '0.1.0'
+    flush_interval_ms: int = 3000
+    max_batch_size: int = 20
+    shutdown_flush_timeout_ms: int = 2000
 
 
 class ConversationClaims:
@@ -141,13 +145,13 @@ class FlowCastleContext:
         self._update = update
 
     async def goal(self, key: str, props: JsonObject | None = None) -> None:
-        await self._core.ingest({'type': 'goal', 'at': int(time.time() * 1000), 'key': key, 'telegramUserId': self._update.actor_id, 'chatId': self._update.chat_id, **({'props': props} if props else {})})
+        self._core.enqueue_event({'type': 'goal', 'at': int(time.time() * 1000), 'key': key, 'telegramUserId': self._update.actor_id, 'chatId': self._update.chat_id, **({'props': props} if props else {})})
 
     async def identify(self, props: JsonObject) -> None:
         if self._update.actor_id is None:
             self._core.report(ValueError('FlowCastle: identify() called without a sender'))
             return
-        await self._core.ingest({'type': 'identify', 'at': int(time.time() * 1000), 'telegramUserId': self._update.actor_id, 'props': props})
+        self._core.enqueue_event({'type': 'identify', 'at': int(time.time() * 1000), 'telegramUserId': self._update.actor_id, 'props': props})
 
     async def request_live_agent(self, note: str | None = None) -> None:
         if self._update.actor_id is None:
@@ -158,7 +162,7 @@ class FlowCastleContext:
             event['chatId'] = self._update.chat_id
         if note is not None:
             event['note'] = note[:500]
-        await self._core.ingest(event)
+        self._core.enqueue_event(event)
 
     async def run_flow(self, flow_key: str, inputs: JsonObject | None = None) -> JsonObject:
         if not self._core.options.runtime_enabled:
@@ -247,9 +251,15 @@ class FlowCastleCore:
         self._etag: str | None = None
         self._claim_cursor: str | None = None
         self._instance_id = options.instance_id or str(uuid.uuid4())
-        self._spool: deque[tuple[float, JsonObject]] = deque(maxlen=SPOOL_MAX_ITEMS)
-        self._spool_lock = asyncio.Lock()
-        self._flushing_spool = False
+        self._event_transport = EventTransport(
+            self._send_event_batch,
+            self.report,
+            options.flush_interval_ms,
+            options.max_batch_size,
+        )
+        self._runtime_spool: deque[tuple[float, JsonObject]] = deque(maxlen=RUNTIME_SPOOL_MAX_ITEMS)
+        self._runtime_spool_lock = asyncio.Lock()
+        self._flushing_runtime_spool = False
         self._running = False
         self._bot: object | None = None
         self._executor: RuntimeJobExecutor | None = None
@@ -284,6 +294,7 @@ class FlowCastleCore:
 
     async def start(self, bot: object, executor: RuntimeJobExecutor | None = None) -> None:
         """Start continuous synchronization, heartbeat, and leased-job delivery."""
+        self._event_transport.start()
         if not self.options.runtime_enabled:
             return
         self._bot = bot
@@ -304,6 +315,7 @@ class FlowCastleCore:
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
         self._tasks.clear()
+        await self._event_transport.stop(self.options.shutdown_flush_timeout_ms)
 
     async def refresh_manifest(self) -> None:
         headers: dict[str, str] = {'Authorization': f'Bearer {self.options.api_key}'}
@@ -324,7 +336,7 @@ class FlowCastleCore:
             self.report(error if isinstance(error, Exception) else RuntimeError(str(error)))
 
     async def refresh_claims(self) -> None:
-        await self.flush_spool()
+        await self.flush_runtime_spool()
         suffix = '' if not self._claim_cursor else f'?cursor={self._claim_cursor}'
         body = await self.request('GET', '/api/sdk/v1/claims' + suffix)
         cursor, entries = body.get('cursor'), body.get('claims')
@@ -342,49 +354,25 @@ class FlowCastleCore:
                 self.claims.clear(entry['conversationKey'], generation)
         self._claim_cursor = cursor
 
+    def enqueue_event(self, event: JsonObject) -> None:
+        self._event_transport.enqueue(event)
+
     async def ingest(self, event: JsonObject) -> bool:
-        delivered = await self._post_event(event)
+        """Queue a best-effort observed event without awaiting network delivery."""
+        self.enqueue_event(event)
+        return True
+
+    async def flush_events(self) -> None:
+        await self._event_transport.flush()
+
+    async def _ingest_required(self, event: JsonObject) -> bool:
+        """Await the ownership hand-off for an update claimed by a FlowCastle flow."""
+        delivered = await self._post_required_event(event)
         if not delivered:
-            async with self._spool_lock:
-                self._prune_spool(time.monotonic())
-                if len(self._spool) == self._spool.maxlen:
-                    self.report(RuntimeError('FlowCastle: dropped oldest runtime event from outage spool'))
-                self._spool.append((time.monotonic(), event))
+            await self._spool_runtime_event(event)
         return delivered
 
-    async def flush_spool(self) -> None:
-        async with self._spool_lock:
-            self._prune_spool(time.monotonic())
-            if self._flushing_spool or not self._spool:
-                return
-            self._flushing_spool = True
-            pending = list(self._spool)
-            self._spool.clear()
-        try:
-            for index, (_created_at, event) in enumerate(pending):
-                if await self._post_event(event):
-                    continue
-                async with self._spool_lock:
-                    combined = pending[index:] + list(self._spool)
-                    dropped = max(0, len(combined) - SPOOL_MAX_ITEMS)
-                    self._spool = deque(combined[dropped:], maxlen=SPOOL_MAX_ITEMS)
-                    if dropped:
-                        self.report(RuntimeError(f'FlowCastle: dropped {dropped} runtime event(s) from outage spool'))
-                    self._prune_spool(time.monotonic())
-                return
-        finally:
-            async with self._spool_lock:
-                self._flushing_spool = False
-
-    def _prune_spool(self, now: float) -> None:
-        dropped = 0
-        while self._spool and now - self._spool[0][0] > SPOOL_MAX_AGE_SECONDS:
-            self._spool.popleft()
-            dropped += 1
-        if dropped:
-            self.report(RuntimeError(f'FlowCastle: dropped {dropped} expired runtime event(s) from outage spool'))
-
-    async def _post_event(self, event: JsonObject) -> bool:
+    async def _post_required_event(self, event: JsonObject) -> bool:
         try:
             status, _headers, _body = await self.http.request(
                 'POST',
@@ -399,11 +387,79 @@ class FlowCastleCore:
             self.report(error if isinstance(error, Exception) else RuntimeError(str(error)))
             return False
 
+    async def _spool_runtime_event(self, event: JsonObject) -> None:
+        async with self._runtime_spool_lock:
+            self._prune_runtime_spool(time.monotonic())
+            if len(self._runtime_spool) == self._runtime_spool.maxlen:
+                self.report(RuntimeError('FlowCastle: dropped oldest matched event from runtime outage spool'))
+            self._runtime_spool.append((time.monotonic(), event))
+
+    async def flush_runtime_spool(self) -> None:
+        async with self._runtime_spool_lock:
+            self._prune_runtime_spool(time.monotonic())
+            if self._flushing_runtime_spool or not self._runtime_spool:
+                return
+            self._flushing_runtime_spool = True
+            pending = list(self._runtime_spool)
+            self._runtime_spool.clear()
+        try:
+            for index, (_created_at, event) in enumerate(pending):
+                if await self._post_required_event(event):
+                    continue
+                async with self._runtime_spool_lock:
+                    combined = pending[index:] + list(self._runtime_spool)
+                    dropped = max(0, len(combined) - RUNTIME_SPOOL_MAX_ITEMS)
+                    self._runtime_spool = deque(combined[dropped:], maxlen=RUNTIME_SPOOL_MAX_ITEMS)
+                    if dropped:
+                        self.report(RuntimeError(f'FlowCastle: dropped {dropped} matched event(s) from runtime outage spool'))
+                    self._prune_runtime_spool(time.monotonic())
+                return
+        finally:
+            async with self._runtime_spool_lock:
+                self._flushing_runtime_spool = False
+
+    def _prune_runtime_spool(self, now: float) -> None:
+        dropped = 0
+        while self._runtime_spool and now - self._runtime_spool[0][0] > RUNTIME_SPOOL_MAX_AGE_SECONDS:
+            self._runtime_spool.popleft()
+            dropped += 1
+        if dropped:
+            self.report(RuntimeError(f'FlowCastle: dropped {dropped} expired matched event(s) from runtime outage spool'))
+
+    async def _send_event_batch(self, events: list[JsonObject]) -> None:
+        for attempt in range(2):
+            try:
+                status, _headers, _body = await self.http.request(
+                    'POST',
+                    self.options.api_url.rstrip('/') + '/api/sdk/v1/events',
+                    {'Authorization': f'Bearer {self.options.api_key}', 'Content-Type': 'application/json'},
+                    {'sdkVersion': 'python-v2', 'events': events},
+                )
+            except Exception as error:
+                if attempt == 0:
+                    continue
+                self.report(error if isinstance(error, Exception) else RuntimeError(str(error)))
+                return
+
+            if 200 <= status < 300:
+                return
+            if status >= 500 and attempt == 0:
+                continue
+            if status == 401:
+                self.report(RuntimeError('FlowCastle: ingest rejected api_key (401)'))
+            elif status >= 500:
+                self.report(RuntimeError(f'FlowCastle: ingest failed ({status}), dropping batch'))
+            return
+
     async def process(self, raw: JsonObject, identity: Mapping[str, str | int] | None = None) -> tuple[bool, FlowCastleContext | None]:
         sanitized = await self.privacy.sanitize_update(raw)
         update = _parse_update(sanitized, identity)
         matched = self.matches(update)
-        await self.ingest({'type': 'update', 'at': int(time.time() * 1000), 'handled': matched, 'update': sanitized})
+        event: JsonObject = {'type': 'update', 'at': int(time.time() * 1000), 'handled': matched, 'update': sanitized}
+        if matched:
+            await self._ingest_required(event)
+        else:
+            self.enqueue_event(event)
         return matched, None if matched else FlowCastleContext(self, update)
 
     def matches(self, update: RuntimeUpdate) -> bool:
