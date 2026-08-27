@@ -70,7 +70,7 @@ created directly in FlowCastle:
 | Read-only because your repository remains the source of truth | Editable and deployable by the teammates who own the journey |
 | Keeps code paths visible and connects them to analytics | Runs onboarding, campaigns, follow-ups, support, and other complementary automations |
 
-![Editable no-code flows alongside a selected, read-only SDK-observed flow in the FlowCastle Automation workspace](docs/images/flow-canvas.png)
+![An auto-arranged editable no-code flow alongside an SDK-observed flow in the FlowCastle Automation workspace](docs/images/flow-canvas.png)
 
 The selected flow above was built in FlowCastle and laid out with the editor's
 auto-arrange action. The same list contains an SDK map clearly labeled
