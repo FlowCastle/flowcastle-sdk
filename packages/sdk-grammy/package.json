@@ -1,0 +1,38 @@
+{
+  "name": "@flowcastle/grammy",
+  "version": "0.4.0",
+  "description": "FlowCastle grammY plugin — observe a Telegram bot and ship batched analytics/contact/goal events to FlowCastle. Zero runtime dependencies; architecturally incapable of breaking the host bot.",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "dev": "tsc --watch"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "grammy",
+    "telegram",
+    "bot",
+    "analytics",
+    "flowcastle"
+  ],
+  "peerDependencies": {
+    "@flowcastle/sdk-runtime": "workspace:^",
+    "grammy": ">=1.20.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.0.0",
+    "@types/node": "^20",
+    "grammy": "^1.43.0",
+    "jest": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "typescript": "^5.0.0"
+  }
+}

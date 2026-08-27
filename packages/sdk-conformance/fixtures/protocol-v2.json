@@ -1,0 +1,105 @@
+{
+  "protocolVersion": 2,
+  "manifest": {
+    "protocolVersion": 2,
+    "version": "conformance-v1",
+    "requiredCapabilities": [
+      "transport.telegram.bot_api.sendMessage"
+    ],
+    "rules": [
+      {
+        "id": "command-start",
+        "flowId": "welcome",
+        "kind": "command",
+        "command": "start",
+        "chatTypes": ["private"],
+        "priority": 10
+      },
+      {
+        "id": "callback-menu",
+        "flowId": "menu",
+        "kind": "callback",
+        "callbackData": { "prefix": "fc:menu:" },
+        "priority": 5
+      }
+    ]
+  },
+  "routingCases": [
+    {
+      "name": "private start command matches",
+      "update": {
+        "chatId": 100,
+        "actorId": 200,
+        "chatType": "private",
+        "command": "start",
+        "text": "/start private-referral",
+        "addressed": true,
+        "raw": {}
+      },
+      "matched": true,
+      "flowId": "welcome"
+    },
+    {
+      "name": "unrelated command continues to customer code",
+      "update": {
+        "chatId": 100,
+        "actorId": 200,
+        "chatType": "private",
+        "command": "help",
+        "text": "/help",
+        "addressed": true,
+        "raw": {}
+      },
+      "matched": false
+    },
+    {
+      "name": "callback prefix matches",
+      "update": {
+        "chatId": 100,
+        "actorId": 200,
+        "chatType": "private",
+        "callbackData": "fc:menu:pricing",
+        "addressed": true,
+        "raw": {}
+      },
+      "matched": true,
+      "flowId": "menu"
+    }
+  ],
+  "jobsResponse": {
+    "protocolVersion": 2,
+    "jobs": [
+      {
+        "protocolVersion": 2,
+        "id": "job-send-1",
+        "leaseToken": "lease-send-1",
+        "attempt": 1,
+        "kind": "transport_call",
+        "transport": "telegram",
+        "operation": "sendMessage",
+        "params": { "chat_id": 100, "text": "Hello from FlowCastle" },
+        "priority": "interactive",
+        "requiredCapabilities": [
+          "transport.telegram.bot_api.sendMessage"
+        ],
+        "conversationKey": "100",
+        "needsResult": true,
+        "origin": "flowcastle_runtime"
+      },
+      {
+        "protocolVersion": 2,
+        "id": "job-forbidden-1",
+        "leaseToken": "lease-forbidden-1",
+        "attempt": 1,
+        "kind": "transport_call",
+        "transport": "telegram",
+        "operation": "setWebhook",
+        "params": { "url": "https://invalid.example" },
+        "priority": "normal",
+        "requiredCapabilities": [],
+        "needsResult": false,
+        "origin": "flowcastle_runtime"
+      }
+    ]
+  }
+}

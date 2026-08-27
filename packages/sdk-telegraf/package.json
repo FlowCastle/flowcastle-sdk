@@ -1,0 +1,29 @@
+{
+  "name": "@flowcastle/telegraf",
+  "version": "0.4.0",
+  "description": "FlowCastle Telegraf middleware for privacy-first Telegram observation and opt-in proxy flows.",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "dev": "tsc --watch"
+  },
+  "engines": { "node": ">=18" },
+  "keywords": ["telegraf", "telegram", "bot", "analytics", "flowcastle"],
+  "peerDependencies": {
+    "@flowcastle/sdk-runtime": "workspace:^",
+    "telegraf": ">=4.16.0"
+  },
+  "devDependencies": {
+    "@flowcastle/sdk-runtime": "workspace:^",
+    "@types/jest": "^29.0.0",
+    "@types/node": "^20",
+    "jest": "^29.0.0",
+    "telegraf": "^4.16.3",
+    "ts-jest": "^29.0.0",
+    "typescript": "^5.0.0"
+  }
+}

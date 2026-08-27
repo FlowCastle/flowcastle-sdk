@@ -1,0 +1,22 @@
+{
+  "name": "@flowcastle/sdk-runtime",
+  "version": "0.1.0",
+  "description": "Library-neutral FlowCastle runtime protocol client for Telegram SDK adapters.",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "dev": "tsc --watch"
+  },
+  "engines": { "node": ">=18" },
+  "devDependencies": {
+    "@types/jest": "^29.0.0",
+    "@types/node": "^20",
+    "jest": "^29.0.0",
+    "ts-jest": "^29.0.0",
+    "typescript": "^5.0.0"
+  }
+}
