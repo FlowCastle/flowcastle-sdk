@@ -59,14 +59,27 @@ code, call a FlowCastle flow for onboarding, return to custom logic, record a
 goal, and later hand the conversation to a human—all through the bot process
 you already operate.
 
-![A lead qualification conversation displayed on the FlowCastle visual canvas](docs/images/flow-canvas.png)
+## Code and no-code, side by side
 
-The SDK observes incoming updates and outgoing Telegram calls. FlowCastle can
-use that activity to reconstruct an **observed, read-only conversation map** on
-the visual canvas. The result gives the whole team a shared view of what the bot
-does, makes legacy flows easier to maintain, and connects each path to real
-analytics. Delete the observed map at any time and let FlowCastle rebuild it
-from fresh activity.
+The same Automation workspace can contain both code-owned behavior and journeys
+created directly in FlowCastle:
+
+| Observed from your code | Built in FlowCastle |
+| --- | --- |
+| Reconstructed automatically from sanitized SDK traffic | Created visually in the no-code editor |
+| Read-only because your repository remains the source of truth | Editable and deployable by the teammates who own the journey |
+| Keeps code paths visible and connects them to analytics | Runs onboarding, campaigns, follow-ups, support, and other complementary automations |
+
+![Editable no-code flows alongside a selected, read-only SDK-observed flow in the FlowCastle Automation workspace](docs/images/flow-canvas.png)
+
+The selected flow above is the observed map: it is clearly labeled, locked, and
+updated from live SDK traffic. The other flows in the same list were built in
+FlowCastle and remain editable. Both can run through one bot process. A deployed
+FlowCastle trigger can claim a matching update, code can explicitly call an
+allowed flow, and everything unmatched continues to your existing handlers.
+
+Delete an observed map at any time and let FlowCastle rebuild it from fresh
+activity. Deleting the map never deletes or changes the code that produced it.
 
 ## Integrate in minutes
 

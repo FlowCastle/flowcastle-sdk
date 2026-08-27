@@ -43,6 +43,21 @@ before `launch()` when the app sends through `bot.telegram` before its first
 incoming update. Calls sent through a different `Telegram` instance must be
 wrapped explicitly too.
 
+## Use code and no-code flows together
+
+Keep framework-native commands and custom business logic in this bot, and build
+complementary onboarding, campaign, follow-up, or support automations in
+FlowCastle's no-code editor. Both kinds appear in the same Automation workspace:
+
+- **Observed flows** are read-only maps reconstructed from SDK traffic. They
+  make code-owned behavior visible without pretending the canvas is its source
+  of truth.
+- **FlowCastle-authored flows** are editable and deployable from the no-code
+  editor. They can claim matching updates or be started explicitly from code.
+
+Unmatched updates continue through the normal Telegraf middleware chain, so one
+bot can use both models without a rewrite.
+
 ## Privacy
 
 Privacy filtering happens inside the process before data enters an event buffer,

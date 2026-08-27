@@ -37,6 +37,22 @@ await adapter.ready()
 adapter.install(application)
 ```
 
+## Use code and no-code flows together
+
+Keep framework-native commands and custom business logic in the Python bot, and
+build complementary onboarding, campaign, follow-up, or support automations in
+FlowCastle's no-code editor. Both kinds appear in the same Automation workspace:
+
+- **Observed flows** are read-only maps reconstructed from SDK traffic. They
+  make code-owned behavior visible without pretending the canvas is its source
+  of truth.
+- **FlowCastle-authored flows** are editable and deployable from the no-code
+  editor. They can claim matching updates or be started explicitly with
+  `run_flow`.
+
+Unmatched updates continue through aiogram or python-telegram-bot normally, so
+one bot can use both models without a rewrite.
+
 The installed framework middleware/handler starts background event delivery,
 continuous claim and manifest refresh, heartbeat, and leased job delivery as
 soon as it receives the framework Bot instance. If you call `handle_update`

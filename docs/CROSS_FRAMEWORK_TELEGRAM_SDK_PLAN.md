@@ -24,6 +24,20 @@ interpreter in each SDK. One server runtime keeps parity for conditions,
 templates, AI, delayed work, sequences, broadcasts, and action kinds; adapters
 remain small, auditable transport integrations.
 
+The product supports both ownership models in one Automation workspace:
+
+- **Code-owned observed flows** are automatically reconstructed from sanitized
+  SDK traffic and remain read-only because the customer's repository is their
+  source of truth.
+- **FlowCastle-authored flows** are built, edited, and deployed in the no-code
+  editor. They can claim matching updates or be invoked explicitly by callable
+  key from customer code.
+
+They are complementary, not migration stages. A customer can keep specialized
+logic in its framework handlers, give product and operations teams visual flows
+for journeys they own, and run both through the same bot process. Unmatched
+updates always continue to customer code.
+
 ## 2. Supported targets and delivery status
 
 | Target | Distribution / runtime | Status | Initial responsibility |

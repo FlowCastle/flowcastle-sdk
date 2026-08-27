@@ -35,6 +35,21 @@ bot.start();
 That's it. Contacts, message analytics, blocked-user detection, and a live
 "connected" indicator light up in your FlowCastle dashboard.
 
+## Use code and no-code flows together
+
+Keep framework-native commands and custom business logic in this bot, and build
+complementary onboarding, campaign, follow-up, or support automations in
+FlowCastle's no-code editor. Both kinds appear in the same Automation workspace:
+
+- **Observed flows** are read-only maps reconstructed from SDK traffic. They
+  make code-owned behavior visible without pretending the canvas is its source
+  of truth.
+- **FlowCastle-authored flows** are editable and deployable from the no-code
+  editor. They can claim matching updates or be started explicitly from code.
+
+Unmatched updates continue through the normal grammY middleware chain, so one
+bot can use both models without a rewrite.
+
 ### Server-side FlowCastle flows (proxy runtime)
 
 Enable the proxy runtime to let FlowCastle execute authored flows on its server
