@@ -72,11 +72,12 @@ created directly in FlowCastle:
 
 ![Editable no-code flows alongside a selected, read-only SDK-observed flow in the FlowCastle Automation workspace](docs/images/flow-canvas.png)
 
-The selected flow above is the observed map: it is clearly labeled, locked, and
-updated from live SDK traffic. The other flows in the same list were built in
-FlowCastle and remain editable. Both can run through one bot process. A deployed
-FlowCastle trigger can claim a matching update, code can explicitly call an
-allowed flow, and everything unmatched continues to your existing handlers.
+The selected flow above was built in FlowCastle and laid out with the editor's
+auto-arrange action. The same list contains an SDK map clearly labeled
+**Observed**; that map is read-only and updated from live SDK traffic. Both can
+run through one bot process. A deployed FlowCastle trigger can claim a matching
+update, code can explicitly call an allowed flow, and everything unmatched
+continues to your existing handlers.
 
 Delete an observed map at any time and let FlowCastle rebuild it from fresh
 activity. Deleting the map never deletes or changes the code that produced it.
