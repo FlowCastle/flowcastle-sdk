@@ -26,8 +26,7 @@ FlowCastle together, choosing the best tool for each part of the product.
 
 > **Release status:** the Node.js SDK packages are available on npm as
 > `@flowcastle/sdk-runtime`, `@flowcastle/grammy`, and `@flowcastle/telegraf`.
-> The Python SDK can currently be installed from a source checkout; its PyPI
-> release is still pending.
+> The Python SDK is available on PyPI as `flowcastle`.
 
 ## Who this is for
 
