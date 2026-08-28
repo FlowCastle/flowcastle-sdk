@@ -3,6 +3,18 @@
   "version": "0.4.0",
   "description": "FlowCastle Telegraf middleware for privacy-first Telegram observation and opt-in proxy flows.",
   "license": "MIT",
+  "homepage": "https://github.com/FlowCastle/flowcastle-sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FlowCastle/flowcastle-sdk.git",
+    "directory": "packages/sdk-telegraf"
+  },
+  "bugs": {
+    "url": "https://github.com/FlowCastle/flowcastle-sdk/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": ["dist"],

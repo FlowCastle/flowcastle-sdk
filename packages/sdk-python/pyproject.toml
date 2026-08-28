@@ -17,6 +17,12 @@ classifiers = [
 ]
 dependencies = []
 
+[project.urls]
+Homepage = "https://flowcastle.ai"
+Repository = "https://github.com/FlowCastle/flowcastle-sdk"
+Issues = "https://github.com/FlowCastle/flowcastle-sdk/issues"
+Documentation = "https://github.com/FlowCastle/flowcastle-sdk#readme"
+
 [project.optional-dependencies]
 aiogram = ["aiogram>=3,<4"]
 python-telegram-bot = ["python-telegram-bot>=21,<23"]

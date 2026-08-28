@@ -3,6 +3,18 @@
   "version": "0.4.0",
   "description": "FlowCastle grammY plugin — observe a Telegram bot and ship batched analytics/contact/goal events to FlowCastle. Zero runtime dependencies; architecturally incapable of breaking the host bot.",
   "license": "MIT",
+  "homepage": "https://github.com/FlowCastle/flowcastle-sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FlowCastle/flowcastle-sdk.git",
+    "directory": "packages/sdk-grammy"
+  },
+  "bugs": {
+    "url": "https://github.com/FlowCastle/flowcastle-sdk/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

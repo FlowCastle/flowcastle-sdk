@@ -3,6 +3,18 @@
   "version": "0.1.0",
   "description": "Library-neutral FlowCastle runtime protocol client for Telegram SDK adapters.",
   "license": "MIT",
+  "homepage": "https://github.com/FlowCastle/flowcastle-sdk#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FlowCastle/flowcastle-sdk.git",
+    "directory": "packages/sdk-runtime"
+  },
+  "bugs": {
+    "url": "https://github.com/FlowCastle/flowcastle-sdk/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": ["dist"],
