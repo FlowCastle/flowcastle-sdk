@@ -24,9 +24,10 @@ You do **not** have to rewrite your bot. Keep the framework, handlers, deploymen
 database, and Telegram token you already own. Connect the SDK and use code and
 FlowCastle together, choosing the best tool for each part of the product.
 
-> **Release status:** the SDK packages are currently in release-hardening and
-> are not yet published to npm or PyPI. The examples below show the stable target
-> API and can be run from a source checkout today.
+> **Release status:** the Node.js SDK packages are available on npm as
+> `@flowcastle/sdk-runtime`, `@flowcastle/grammy`, and `@flowcastle/telegraf`.
+> The Python SDK can currently be installed from a source checkout; its PyPI
+> release is still pending.
 
 ## Who this is for
 
