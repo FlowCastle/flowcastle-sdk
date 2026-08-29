@@ -233,6 +233,10 @@ Handlers get `context.flowcastle` with `goal`, `identify`, `request_live_agent` 
 
 </details>
 
+Want a complete project instead of a snippet? [`examples/`](examples) has a runnable
+bot per framework — identify, goals, `/qualify` journey, Live Chat handoff and an optional
+no-code follow-up flow.
+
 Polling and webhooks both work — the SDK is middleware and never touches how
 updates reach your process.
 
@@ -384,6 +388,8 @@ back to developers as visible paths and measurable outcomes.
   with optional aiogram and python-telegram-bot adapters.
 - [`packages/sdk-conformance`](packages/sdk-conformance) — language-neutral
   protocol-v2 fixtures.
+- [`examples`](examples) — runnable example bots for grammY, Telegraf, aiogram and
+  python-telegram-bot.
 - [`docs`](docs) — architecture, parity, rollout, and runtime design notes.
 
 ## Develop and test

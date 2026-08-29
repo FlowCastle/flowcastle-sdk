@@ -1,0 +1,2 @@
+flowcastle[aiogram]>=0.1.1
+python-dotenv>=1.0

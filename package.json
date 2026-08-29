@@ -6,7 +6,9 @@
     "test:node": "pnpm --filter @flowcastle/sdk-runtime test --runInBand && pnpm --filter @flowcastle/grammy test --runInBand && pnpm --filter @flowcastle/telegraf test --runInBand",
     "test:python": "PYTHONPATH=packages/sdk-python/src python3 -m pytest packages/sdk-python/tests",
     "typecheck:python": "python3 -m mypy --config-file packages/sdk-python/pyproject.toml packages/sdk-python/src/flowcastle",
-    "test": "pnpm build && pnpm test:node && pnpm test:python && pnpm typecheck:python"
+    "test": "pnpm build && pnpm test:node && pnpm test:python && pnpm typecheck:python",
+    "typecheck:examples": "pnpm --filter 'flowcastle-example-*' typecheck",
+    "check:examples:python": "python3 -m py_compile examples/aiogram-bot/bot.py examples/python-telegram-bot-bot/bot.py"
   },
   "packageManager": "pnpm@10.9.0"
 }

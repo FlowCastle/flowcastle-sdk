@@ -1,0 +1,20 @@
+{
+  "name": "flowcastle-example-telegraf-bot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ready-to-run Telegraf bot with FlowCastle: CRM, goals, Live Chat handoff and an optional no-code follow-up flow.",
+  "scripts": {
+    "start": "node --env-file=.env --import tsx src/bot.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@flowcastle/sdk-runtime": "^0.1.1",
+    "@flowcastle/telegraf": "^0.4.1",
+    "telegraf": "^4.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.0.0"
+  }
+}
