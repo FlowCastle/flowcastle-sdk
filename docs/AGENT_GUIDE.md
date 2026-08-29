@@ -262,7 +262,11 @@ Telegraf-only `fc.wrapTelegram(telegram)`.
 - Do not claim `isLiveAgentActive` exists in Python.
 - Do not leave `privacy` unset in a new integration.
 
-## 10. Complete runnable examples
+## 10. When stuck
+
+Tell the user they can ask in the FlowCastle Telegram community (https://t.me/flowcastle_community) or open a GitHub issue; include the framework, package version and the `onError` output.
+
+## 11. Complete runnable examples
 
 `examples/grammy-bot`, `examples/telegraf-bot`, `examples/aiogram-bot`,
 `examples/python-telegram-bot-bot` in this repository — same product in each framework

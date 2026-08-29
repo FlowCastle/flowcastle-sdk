@@ -414,7 +414,7 @@ credentials.
 
 - [FlowCastle](https://flowcastle.ai) · [Dashboard](https://dashboard.flowcastle.ai/register) · [REST API docs](https://api.flowcastle.ai/api/public/docs) · [Blog](https://flowcastle.ai/blog)
 - Bot templates + MCP server for AI coding agents: [FlowCastle/telegram-bot-templates](https://github.com/FlowCastle/telegram-bot-templates)
-- Questions or a framework request: [open an issue](https://github.com/FlowCastle/flowcastle-sdk/issues). If the SDK is useful to you, a ⭐ helps other bot developers find it.
+- Questions, integration help, a framework request: the [FlowCastle bot developers community on Telegram](https://t.me/flowcastle_community) — fastest answers — or [open an issue](https://github.com/FlowCastle/flowcastle-sdk/issues). If the SDK is useful to you, a ⭐ helps other bot developers find it.
 
 ## Security
 

@@ -26,6 +26,11 @@ Credential: one `fc_sdk_…` key from https://dashboard.flowcastle.ai → applic
 - [Cross-framework SDK plan](https://raw.githubusercontent.com/FlowCastle/flowcastle-sdk/main/docs/CROSS_FRAMEWORK_TELEGRAM_SDK_PLAN.md): shared protocol, capability model, privacy contract, adapter recipe.
 - [Proxy flow runtime plan](https://raw.githubusercontent.com/FlowCastle/flowcastle-sdk/main/docs/SDK_GRAMMY_PROXY_FLOW_RUNTIME_PLAN.md)
 
+## Support
+
+- [Telegram community](https://t.me/flowcastle_community): ask integration questions, get help from the maintainers and other bot developers.
+- [GitHub issues](https://github.com/FlowCastle/flowcastle-sdk/issues)
+
 ## FlowCastle platform
 
 - [flowcastle.ai/llms.txt](https://flowcastle.ai/llms.txt): the product, pricing, docs, templates, MCP server for building flows with AI agents.
