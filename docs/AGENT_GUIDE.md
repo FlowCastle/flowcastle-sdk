@@ -235,8 +235,8 @@ Telegraf-only `fc.wrapTelegram(telegram)`.
 
 1. Type-check / import: `tsc --noEmit` or `python -c "import bot"` succeeds.
 2. Set `onError` to log. Start the bot. No `[flowcastle]` errors within 10 s means the key was accepted (a bad key logs a 401 on first flush, ≈3 s after the first update).
-3. Send `/start` to the bot in Telegram. Within ~5 s the user appears under **Contacts** in the FlowCastle dashboard, and the SDK bot's status shows connected.
-4. If you added a `goal(...)`, trigger it and confirm it under **Analytics → Goals**.
+3. Send `/start` to the bot in Telegram. Within a few seconds the user appears in **Contacts** in the FlowCastle dashboard and the SDK bot shows as connected.
+4. If you added a `goal(...)`, trigger it and confirm it on the contact's record and in the dashboard's goal analytics.
 5. If you enabled `runtime`, deploy a flow in FlowCastle with a `/command` trigger the bot's code does **not** handle, send that command, and confirm FlowCastle replies while code commands still work.
 6. Stop the process with SIGINT and confirm it exits cleanly (flush is bounded; it must not hang).
 
