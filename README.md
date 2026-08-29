@@ -40,6 +40,10 @@ bot.start();
 (free, no card), open your application and choose **Add bot → Code SDK**. You get an
 `fc_sdk_…` key — FlowCastle never asks for your Telegram bot token.
 
+**Using an AI coding agent?** Point it at [`docs/AGENT_GUIDE.md`](docs/AGENT_GUIDE.md)
+(or `llms.txt`) — a single file with the install order for every framework, all options,
+a verification checklist and troubleshooting.
+
 That's it: contacts, message analytics, blocked-user detection and a live "connected"
 indicator light up in the dashboard. Telegraf, aiogram and python-telegram-bot
 snippets are [below](#integrate-in-minutes).

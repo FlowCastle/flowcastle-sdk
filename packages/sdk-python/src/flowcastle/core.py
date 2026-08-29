@@ -79,7 +79,7 @@ class FlowCastleOptions:
     instance_id: str | None = None
     on_error: Callable[[Exception], None] | None = None
     library_name: str = 'flowcastle-python'
-    library_version: str = '0.1.0'
+    library_version: str = '0.1.1'
     flush_interval_ms: int = 3000
     max_batch_size: int = 20
     shutdown_flush_timeout_ms: int = 2000

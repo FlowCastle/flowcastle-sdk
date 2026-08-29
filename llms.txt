@@ -1,0 +1,31 @@
+# FlowCastle SDK
+
+> Middleware that adds a contact CRM, Live Chat with human handoff, broadcasts, goals and conversion analytics to a Telegram bot you already run in code — grammY, Telegraf, aiogram 3 or python-telegram-bot 21/22. The bot token never leaves your process; message content is filtered locally; handlers never wait on the network. Optionally, flows built visually in FlowCastle run through the same bot process. MIT.
+
+Packages: `@flowcastle/grammy`, `@flowcastle/telegraf`, `@flowcastle/sdk-runtime` (npm) · `flowcastle` (PyPI, extras `[aiogram]` / `[python-telegram-bot]`).
+Credential: one `fc_sdk_…` key from https://dashboard.flowcastle.ai → application → Add bot → Code SDK.
+
+## Start here (agents)
+
+- [Agent setup guide](https://raw.githubusercontent.com/FlowCastle/flowcastle-sdk/main/docs/AGENT_GUIDE.md): single-file install + option reference + verification checklist + troubleshooting for all four frameworks. Read this first.
+- [README](https://raw.githubusercontent.com/FlowCastle/flowcastle-sdk/main/README.md): positioning, snippets, privacy and performance contract.
+
+## Per-framework
+
+- [grammY package](https://raw.githubusercontent.com/FlowCastle/flowcastle-sdk/main/packages/sdk-grammy/README.md)
+- [Telegraf package](https://raw.githubusercontent.com/FlowCastle/flowcastle-sdk/main/packages/sdk-telegraf/README.md)
+- [Python package (aiogram, python-telegram-bot)](https://raw.githubusercontent.com/FlowCastle/flowcastle-sdk/main/packages/sdk-python/README.md)
+- [Runtime protocol package](https://raw.githubusercontent.com/FlowCastle/flowcastle-sdk/main/packages/sdk-runtime/README.md)
+
+## Runnable examples
+
+- [grammY](https://github.com/FlowCastle/flowcastle-sdk/tree/main/examples/grammy-bot) · [Telegraf](https://github.com/FlowCastle/flowcastle-sdk/tree/main/examples/telegraf-bot) · [aiogram](https://github.com/FlowCastle/flowcastle-sdk/tree/main/examples/aiogram-bot) · [python-telegram-bot](https://github.com/FlowCastle/flowcastle-sdk/tree/main/examples/python-telegram-bot-bot)
+
+## Design docs
+
+- [Cross-framework SDK plan](https://raw.githubusercontent.com/FlowCastle/flowcastle-sdk/main/docs/CROSS_FRAMEWORK_TELEGRAM_SDK_PLAN.md): shared protocol, capability model, privacy contract, adapter recipe.
+- [Proxy flow runtime plan](https://raw.githubusercontent.com/FlowCastle/flowcastle-sdk/main/docs/SDK_GRAMMY_PROXY_FLOW_RUNTIME_PLAN.md)
+
+## FlowCastle platform
+
+- [flowcastle.ai/llms.txt](https://flowcastle.ai/llms.txt): the product, pricing, docs, templates, MCP server for building flows with AI agents.
