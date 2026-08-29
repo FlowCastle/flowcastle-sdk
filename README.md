@@ -1,32 +1,58 @@
-# FlowCastle SDKs
+# FlowCastle SDK for Telegram bots
 
 <p align="center">
-  <strong>Keep building your Telegram bot in code. Add the growth and operating system around it.</strong>
+  <strong>Add a contact CRM, Live Chat, broadcasts and conversion analytics to the Telegram bot you already have — grammY, Telegraf, aiogram or python-telegram-bot — without rewriting your handlers or handing over your bot token.</strong>
 </p>
 
 <p align="center">
   <a href="https://github.com/FlowCastle/flowcastle-sdk/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/FlowCastle/flowcastle-sdk/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://www.npmjs.com/package/@flowcastle/grammy"><img alt="npm @flowcastle/grammy" src="https://img.shields.io/npm/v/@flowcastle/grammy?label=%40flowcastle%2Fgrammy"></a>
+  <a href="https://www.npmjs.com/package/@flowcastle/telegraf"><img alt="npm @flowcastle/telegraf" src="https://img.shields.io/npm/v/@flowcastle/telegraf?label=%40flowcastle%2Ftelegraf"></a>
+  <a href="https://pypi.org/project/flowcastle/"><img alt="PyPI flowcastle" src="https://img.shields.io/pypi/v/flowcastle?label=pypi%20flowcastle"></a>
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-2563eb"></a>
   <a href="https://flowcastle.ai"><img alt="FlowCastle" src="https://img.shields.io/badge/FlowCastle-website-0f172a"></a>
 </p>
 
-Writing bot code is fun. But code alone does not bring users, help a growth team
-understand them, give support a shared inbox, or show which conversations
-convert.
+## 30-second start
+
+```bash
+npm install @flowcastle/grammy      # or @flowcastle/telegraf
+pip install 'flowcastle[aiogram]'   # or 'flowcastle[python-telegram-bot]'
+```
+
+```ts
+import { Bot } from 'grammy';
+import { flowcastle } from '@flowcastle/grammy';
+
+const bot = new Bot(process.env.BOT_TOKEN!);
+bot.use(flowcastle({ apiKey: process.env.FLOWCASTLE_API_KEY!, privacy: {} }));
+
+bot.command('hello', (ctx) => ctx.reply('Still handled by my code'));
+bot.start();
+```
+
+**Get an API key:** sign in to the [FlowCastle dashboard](https://dashboard.flowcastle.ai/register)
+(free, no card), open your application and choose **Add bot → Code SDK**. You get an
+`fc_sdk_…` key — FlowCastle never asks for your Telegram bot token.
+
+That's it: contacts, message analytics, blocked-user detection and a live "connected"
+indicator light up in the dashboard. Telegraf, aiogram and python-telegram-bot
+snippets are [below](#integrate-in-minutes).
+
+## What you get
 
 [FlowCastle](https://flowcastle.ai) is the layer around your bot that turns a
-working program into a product people can distribute, operate, and improve. It
-adds a contact CRM, Live Chat, broadcasts and marketing campaigns, goals,
-conversion analytics, reusable modules, and a visual map of the conversations
-already happening in your code.
+working program into a product people can distribute, operate, and improve:
+
+- **Contact CRM** — every user who talks to the bot, with tags, variables, orders and goals.
+- **Live Chat** — hand a conversation to a human from a handler; the reply goes back through your bot.
+- **Broadcasts, campaigns, drip sequences** — sent through your bot process, measured against goals.
+- **Goals, funnels, conversion analytics** — `ctx.flowcastle.goal('paid')` from any handler.
+- **A visual map of your existing bot** — FlowCastle reconstructs the conversations already happening in your code from sanitized SDK traffic, read-only, so growth and support can see what the bot does without reading the source.
+- **No-code flows next to your code** — teammates build onboarding, follow-ups or support journeys in the visual editor; your code stays authoritative for everything else.
 
 You do **not** have to rewrite your bot. Keep the framework, handlers, deployment,
-database, and Telegram token you already own. Connect the SDK and use code and
-FlowCastle together, choosing the best tool for each part of the product.
-
-> **Release status:** the Node.js SDK packages are available on npm as
-> `@flowcastle/sdk-runtime`, `@flowcastle/grammy`, and `@flowcastle/telegraf`.
-> The Python SDK is available on PyPI as `flowcastle`.
+database, and Telegram token you already own.
 
 ## Who this is for
 
@@ -59,33 +85,28 @@ code, call a FlowCastle flow for onboarding, return to custom logic, record a
 goal, and later hand the conversation to a human—all through the bot process
 you already operate.
 
-## Code and no-code, side by side
+## See your bot's conversations — and add no-code ones beside them
 
-The same Automation workspace can contain both code-owned behavior and journeys
-created directly in FlowCastle:
+![An editable no-code flow alongside an SDK-observed map of the code-owned bot in the FlowCastle Automation workspace](docs/images/flow-canvas.png)
+
+The same workspace holds two kinds of flows:
 
 | Observed from your code | Built in FlowCastle |
 | --- | --- |
 | Reconstructed automatically from sanitized SDK traffic | Created visually in the no-code editor |
-| Read-only because your repository remains the source of truth | Editable and deployable by the teammates who own the journey |
-| Keeps code paths visible and connects them to analytics | Runs onboarding, campaigns, follow-ups, support, and other complementary automations |
+| Read-only — your repository stays the source of truth | Editable and deployable by the teammates who own the journey |
+| Makes code paths visible and connects them to analytics | Runs onboarding, campaigns, follow-ups, support, and other complementary automations |
 
-![An auto-arranged editable no-code flow alongside an SDK-observed flow in the FlowCastle Automation workspace](docs/images/flow-canvas.png)
-
-The selected flow above was built in FlowCastle and laid out with the editor's
-auto-arrange action. The same list contains an SDK map clearly labeled
-**Observed**; that map is read-only and updated from live SDK traffic. Both can
-run through one bot process. A deployed FlowCastle trigger can claim a matching
+Both run through one bot process. A deployed FlowCastle trigger can claim a matching
 update, code can explicitly call an allowed flow, and everything unmatched
-continues to your existing handlers.
-
-Delete an observed map at any time and let FlowCastle rebuild it from fresh
-activity. Deleting the map never deletes or changes the code that produced it.
+continues to your existing handlers. Delete an observed map at any time and
+FlowCastle rebuilds it from fresh activity; it never touches the code that produced it.
 
 ## Integrate in minutes
 
 Every adapter uses the same protocol and privacy model. Framework-specific code
-stays deliberately thin.
+stays deliberately thin. Add `runtime: { enabled: true }` to let FlowCastle-authored
+flows run through your bot.
 
 ### grammY
 
@@ -178,6 +199,8 @@ adapter.install(dispatcher)
 await dispatcher.start_polling(bot)
 ```
 
+Handlers receive `flowcastle` in middleware data: `await flowcastle.goal('paid')`.
+
 </details>
 
 <details>
@@ -201,7 +224,12 @@ adapter.install(application)
 application.run_polling()
 ```
 
+Handlers get `context.flowcastle` with `goal`, `identify`, `request_live_agent` and `run_flow`.
+
 </details>
+
+Polling and webhooks both work — the SDK is middleware and never touches how
+updates reach your process.
 
 The framework-neutral protocol is the important part: adapters translate native
 updates and Telegram calls, while matching, privacy, flow execution, leased
@@ -209,68 +237,18 @@ jobs, and acknowledgements remain consistent. That makes support for another
 Telegram library—or another language—a small adapter project instead of a new
 platform integration.
 
-## Performance contract
+## Supported adapters
 
-FlowCastle network delivery stays outside the execution path of ordinary
-commands, callbacks, and unmatched updates in **Node.js and Python**. After
-local privacy filtering and trigger matching, the adapter places observation
-events in a bounded in-memory queue and immediately continues to your existing
-handler. Goals, identification, and Live Chat requests use the same
-fire-and-forget transport.
+| Framework | Package | Runtime |
+| --- | --- | --- |
+| [grammY](https://grammy.dev) | `@flowcastle/grammy` | Node.js 18+ |
+| [Telegraf](https://telegraf.js.org) | `@flowcastle/telegraf` | Node.js 18+ |
+| [aiogram 3](https://docs.aiogram.dev) | `flowcastle[aiogram]` | Python 3.10+ |
+| [python-telegram-bot 21/22](https://python-telegram-bot.org) | `flowcastle[python-telegram-bot]` | Python 3.10+ |
 
-Observation events flush every three seconds or at 20 queued events, with no
-more than 50 events in one request. The queue holds at most 500 events and drops
-the oldest under sustained pressure instead of growing without limit. Network
-and 5xx failures receive one background retry and never throw into customer
-handlers.
-
-This is deliberately described as **network fire-and-forget**, not zero
-overhead. Cloning, privacy filtering, and local manifest matching still use a
-small amount of CPU. An async `transformText` callback is awaited because raw
-content must never race past redaction. Two server operations are also
-intentionally awaited:
-
-- An update matched by a FlowCastle trigger or active conversation claim,
-  because FlowCastle owns the response and customer handlers must not also run.
-  Failed hand-offs enter a separate bounded runtime outage spool for replay
-  instead of falling through and risking a duplicate reply.
-- An explicit `runFlow` / `run_flow` call, because it returns the accepted flow
-  execution id.
-
-Both boundaries are covered by regression tests with a deliberately blocked
-`/events` endpoint: unmatched customer handlers finish first, while matched
-flow updates remain pending until ownership is accepted.
-
-## What your team gets
-
-<table>
-  <tr>
-    <td width="50%">
-      <img alt="FlowCastle modules marketplace" src="docs/images/modules-marketplace.png"><br>
-      <sub><strong>Build faster.</strong> Add ready modules and integrations instead of rebuilding commodity features. The <a href="https://github.com/FlowCastle/telegram-bot-templates">FlowCastle MCP and bot templates</a> also let AI coding agents help draft and maintain bots and flows.</sub>
-    </td>
-    <td width="50%">
-      <img alt="FlowCastle analytics dashboard" src="docs/images/analytics-dashboard.png"><br>
-      <sub><strong>Know what works.</strong> Connect conversations, subscriber growth, orders, revenue, and campaign activity in one analytics view.</sub>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <img alt="FlowCastle broadcast effectiveness report" src="docs/images/broadcast-effectiveness.png"><br>
-      <sub><strong>Improve distribution.</strong> Send targeted broadcasts and see their real effect on engagement, goals, and unsubscribes.</sub>
-    </td>
-    <td width="50%" align="center">
-      <img alt="A FlowCastle contact record with variables, tags, orders, sequences, and goals" src="docs/images/contact-details.png" width="420"><br>
-      <sub><strong>Understand each contact.</strong> Give growth and support teams useful context without exposing fields your application has chosen not to share.</sub>
-    </td>
-  </tr>
-</table>
-
-FlowCastle shortens both development and feedback loops: launch with ready
-modules, let non-developers operate the customer journey, and bring the results
-back to developers as visible paths and measurable outcomes. Distribution stops
-being an afterthought attached to finished code; it becomes part of how the
-product is built.
+Using another library? The [cross-framework SDK plan](docs/CROSS_FRAMEWORK_TELEGRAM_SDK_PLAN.md)
+documents the shared protocol, capability model, privacy contract, and the recipe
+for adding a framework or language — open an issue and we'll help.
 
 ## Privacy is configured in your process
 
@@ -344,18 +322,51 @@ Read the complete contract in the [grammY privacy guide](packages/sdk-grammy/REA
 [Telegraf guide](packages/sdk-telegraf/README.md#privacy), and
 [Python guide](packages/sdk-python/README.md).
 
-## Supported adapters
+## Performance contract
 
-| Framework | Package | Runtime |
-| --- | --- | --- |
-| [grammY](https://grammy.dev) | `@flowcastle/grammy` | Node.js 18+ |
-| [Telegraf](https://telegraf.js.org) | `@flowcastle/telegraf` | Node.js 18+ |
-| [aiogram 3](https://docs.aiogram.dev) | `flowcastle[aiogram]` | Python 3.10+ |
-| [python-telegram-bot 21/22](https://python-telegram-bot.org) | `flowcastle[python-telegram-bot]` | Python 3.10+ |
+- **Ordinary updates never wait on FlowCastle.** After local privacy filtering and
+  trigger matching, the event goes into a bounded in-memory queue and your handler
+  runs immediately. Goals, identification and Live Chat requests use the same
+  fire-and-forget path.
+- **Bounded memory.** Flush every 3 s or at 20 events, max 50 per request, queue
+  capped at 500 events (oldest dropped under pressure). Network/5xx failures get
+  one background retry and never throw into your handlers.
+- **Two things are awaited on purpose:** an update claimed by a FlowCastle flow
+  (so your handler doesn't reply twice — failed hand-offs go to a bounded replay
+  spool), and an explicit `runFlow` (it returns the execution id). An async
+  `transformText` is awaited so raw content can never race past redaction.
+- Both boundaries are covered by regression tests with a deliberately blocked
+  `/events` endpoint. Full details in the [grammY](packages/sdk-grammy/README.md)
+  and [Python](packages/sdk-python/README.md#performance-boundary) READMEs.
 
-The [cross-framework SDK plan](docs/CROSS_FRAMEWORK_TELEGRAM_SDK_PLAN.md)
-documents the shared protocol, capability model, privacy contract, E2E layers,
-and recipe for adding another framework or language.
+## What your team gets
+
+<table>
+  <tr>
+    <td width="50%">
+      <img alt="FlowCastle modules marketplace" src="docs/images/modules-marketplace.png"><br>
+      <sub><strong>Build faster.</strong> Add ready modules and integrations instead of rebuilding commodity features. The <a href="https://github.com/FlowCastle/telegram-bot-templates">FlowCastle MCP and bot templates</a> also let AI coding agents help draft and maintain bots and flows.</sub>
+    </td>
+    <td width="50%">
+      <img alt="FlowCastle analytics dashboard" src="docs/images/analytics-dashboard.png"><br>
+      <sub><strong>Know what works.</strong> Connect conversations, subscriber growth, orders, revenue, and campaign activity in one analytics view.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img alt="FlowCastle broadcast effectiveness report" src="docs/images/broadcast-effectiveness.png"><br>
+      <sub><strong>Improve distribution.</strong> Send targeted broadcasts and see their real effect on engagement, goals, and unsubscribes.</sub>
+    </td>
+    <td width="50%" align="center">
+      <img alt="A FlowCastle contact record with variables, tags, orders, sequences, and goals" src="docs/images/contact-details.png" width="420"><br>
+      <sub><strong>Understand each contact.</strong> Give growth and support teams useful context without exposing fields your application has chosen not to share.</sub>
+    </td>
+  </tr>
+</table>
+
+FlowCastle shortens both development and feedback loops: launch with ready
+modules, let non-developers operate the customer journey, and bring the results
+back to developers as visible paths and measurable outcomes.
 
 ## Repository layout
 
@@ -383,6 +394,12 @@ grammY, Telegraf, aiogram, and python-telegram-bot dispatchers without Telegram
 credentials, runs the shared conformance fixtures, and checks the Python package
 with strict mypy. Live Telegram testing is separate and requires dedicated test
 credentials.
+
+## Links & support
+
+- [FlowCastle](https://flowcastle.ai) · [Dashboard](https://dashboard.flowcastle.ai/register) · [REST API docs](https://api.flowcastle.ai/api/public/docs) · [Blog](https://flowcastle.ai/blog)
+- Bot templates + MCP server for AI coding agents: [FlowCastle/telegram-bot-templates](https://github.com/FlowCastle/telegram-bot-templates)
+- Questions or a framework request: [open an issue](https://github.com/FlowCastle/flowcastle-sdk/issues). If the SDK is useful to you, a ⭐ helps other bot developers find it.
 
 ## Security
 

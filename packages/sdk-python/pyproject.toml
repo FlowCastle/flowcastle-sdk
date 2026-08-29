@@ -4,15 +4,26 @@ build-backend = "hatchling.build"
 
 [project]
 name = "flowcastle"
-version = "0.1.0"
-description = "Framework-neutral FlowCastle protocol v2 runtime with Telegram adapters"
+version = "0.1.1"
+description = "Add CRM, Live Chat, broadcasts and analytics to your Telegram bot — FlowCastle SDK for aiogram and python-telegram-bot"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "FlowCastle" }]
+keywords = ["telegram", "telegram-bot", "aiogram", "python-telegram-bot", "chatbot", "crm", "analytics", "live-chat", "broadcast", "flowcastle"]
 classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Framework :: AsyncIO",
+  "Topic :: Communications :: Chat",
+  "Topic :: Software Development :: Libraries :: Python Modules",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Typing :: Typed",
 ]
 dependencies = []

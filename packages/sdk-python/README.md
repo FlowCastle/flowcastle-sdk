@@ -1,5 +1,10 @@
 # FlowCastle Python SDK
 
+Part of [flowcastle-sdk](https://github.com/FlowCastle/flowcastle-sdk) — add CRM, Live Chat,
+broadcasts and analytics to an existing aiogram or python-telegram-bot bot without
+handing over your token. Get an API key: FlowCastle dashboard → your application →
+**Add bot → Code SDK**.
+
 `flowcastle` is a protocol-v2 SDK with a framework-neutral core and optional
 thin adapters for aiogram 3.x and python-telegram-bot 21+.
 
@@ -134,6 +139,6 @@ The default client uses only the standard library (`urllib`) in a worker thread.
 From the repository root, run all Python adapter tests with:
 
 ```bash
-pnpm sdk:test:python
+pnpm test:python
 python3 -m mypy --config-file packages/sdk-python/pyproject.toml packages/sdk-python/src/flowcastle
 ```

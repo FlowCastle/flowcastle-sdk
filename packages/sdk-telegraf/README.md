@@ -1,5 +1,7 @@
 # @flowcastle/telegraf
 
+[![npm](https://img.shields.io/npm/v/@flowcastle/telegraf)](https://www.npmjs.com/package/@flowcastle/telegraf) · Part of [flowcastle-sdk](https://github.com/FlowCastle/flowcastle-sdk). Get an API key: FlowCastle dashboard → your application → **Add bot → Code SDK**.
+
 Privacy-first FlowCastle middleware for existing [Telegraf](https://telegraf.js.org)
 bots. It observes incoming updates, exposes contacts/goals/Live Chat helpers,
 and can opt into FlowCastle's proxy runtime without taking over unmatched bot

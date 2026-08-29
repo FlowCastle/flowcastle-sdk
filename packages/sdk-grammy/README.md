@@ -1,5 +1,7 @@
 # @flowcastle/grammy
 
+[![npm](https://img.shields.io/npm/v/@flowcastle/grammy)](https://www.npmjs.com/package/@flowcastle/grammy) · Part of [flowcastle-sdk](https://github.com/FlowCastle/flowcastle-sdk). Get an API key: FlowCastle dashboard → your application → **Add bot → Code SDK**.
+
 Add FlowCastle — Contacts, Analytics, Goals, Live Chat, and Broadcasts — to your
 existing [grammY](https://grammy.dev) bot with **one line**. The plugin observes
 incoming updates and outgoing Bot API calls, batches them, and ships them to
