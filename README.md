@@ -13,6 +13,11 @@
   <a href="https://flowcastle.ai"><img alt="FlowCastle" src="https://img.shields.io/badge/FlowCastle-website-0f172a"></a>
 </p>
 
+Writing bot code is fun. But code alone does not bring users, help a growth team
+understand them, give support a shared inbox, or show which conversations
+convert. FlowCastle is the layer around your bot that does — and this SDK plugs
+it into the bot you already have.
+
 ## 30-second start
 
 ```bash
