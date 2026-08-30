@@ -356,6 +356,12 @@ Read the complete contract in the [grammY privacy guide](packages/sdk-grammy/REA
 
 <table>
   <tr>
+    <td width="100%" colspan="2">
+      <img alt="FlowCastle Live Chat: a conversation from an SDK-connected grammY bot handed to a human agent, with the agent's replies going back through the bot" src="docs/images/live-chat.png"><br>
+      <sub><strong>Talk to users.</strong> Hand a conversation to a person from any handler (<code>ctx.flowcastle.requestLiveAgent()</code>); the agent replies in Live Chat and the message goes back through your bot process. Your code keeps answering everything else.</sub>
+    </td>
+  </tr>
+  <tr>
     <td width="50%">
       <img alt="FlowCastle modules marketplace" src="docs/images/modules-marketplace.png"><br>
       <sub><strong>Build faster.</strong> Add ready modules and integrations instead of rebuilding commodity features. The <a href="https://github.com/FlowCastle/telegram-bot-templates">FlowCastle MCP and bot templates</a> also let AI coding agents help draft and maintain bots and flows.</sub>
